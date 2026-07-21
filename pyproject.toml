@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edgepulse-ai-qe"
+version = "0.1.0"
+description = "Agentic Quality Engineering reference platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "pydantic",
+    "httpx"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "edgepulse*",
+    "ai_qe*"
+]
+exclude = [
+    "datasets*"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["edgepulse/tests"]
+
+[tool.coverage.run]
+source = ["edgepulse", "ai_qe"]
