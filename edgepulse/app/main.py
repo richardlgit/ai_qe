@@ -5,6 +5,8 @@ from fastapi import FastAPI
 
 from edgepulse.app.api.devices import router as devices_router
 from edgepulse.app.database.config import Base, engine
+from edgepulse.app.api.telemetry import router as telemetry_router
+from edgepulse.app.database.telemetry_entity import TelemetryEntity 
 
 
 @asynccontextmanager
@@ -26,6 +28,7 @@ app = FastAPI(
 )
 
 app.include_router(devices_router)
+app.include_router(telemetry_router)
 
 
 @app.get("/health")
