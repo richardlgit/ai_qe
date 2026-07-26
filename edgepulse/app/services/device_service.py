@@ -2,12 +2,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from edgepulse.app.database.device_entity import DeviceEntity
-from edgepulse.app.models.device import DeviceCreate, DeviceStatus
 from edgepulse.app.services.device_exceptions import (
     DeviceAlreadyExistsError,
     DeviceNotFoundError,
 )
-
+from edgepulse.app.models.device import (
+    DeviceCreate,
+    DeviceStatus,
+    DeviceStatusUpdate,
+)
 
 class DeviceService:
     @staticmethod
@@ -58,3 +61,21 @@ class DeviceService:
         )
 
         return list(database.scalars(statement).all())
+    
+    @staticmethod
+    def update_device_status(
+        database: Session,
+        device_id: str,
+        request: DeviceStatusUpdate,
+    ) -> DeviceEntity:
+        device = database.get(DeviceEntity, device_id)
+
+        if device is None:
+            raise DeviceNotFoundError(device_id)
+
+        device.status = request.status.value
+
+        database.commit()
+        database.refresh(device)
+
+        return device

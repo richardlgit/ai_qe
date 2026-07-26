@@ -26,7 +26,9 @@ class DeviceCreate(BaseModel):
         max_length=50,
     )
 
-
+class DeviceStatusUpdate(BaseModel):
+    status: DeviceStatus
+    
 class DeviceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

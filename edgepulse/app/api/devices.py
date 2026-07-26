@@ -5,6 +5,7 @@ from edgepulse.app.database.session import get_db
 from edgepulse.app.models.device import (
     DeviceCreate,
     DeviceResponse,
+    DeviceStatusUpdate,
 )
 from edgepulse.app.services.device_exceptions import (
     DeviceAlreadyExistsError,
@@ -42,6 +43,30 @@ def register_device(
             detail=str(error),
         ) from error
 
+
+@router.patch(
+    "/{device_id}/status",
+    response_model=DeviceResponse,
+)
+def update_device_status(
+    device_id: str,
+    request: DeviceStatusUpdate,
+    database: Session = Depends(get_db),
+) -> DeviceResponse:
+    try:
+        device = DeviceService.update_device_status(
+            database=database,
+            device_id=device_id,
+            request=request,
+        )
+
+        return DeviceResponse.model_validate(device)
+
+    except DeviceNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
 
 @router.get(
     "/{device_id}",
