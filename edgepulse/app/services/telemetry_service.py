@@ -14,6 +14,7 @@ from edgepulse.app.services.telemetry_exceptions import (
     DuplicateTelemetryError,
     InactiveDeviceError,
 )
+from edgepulse.app.services.alert_service import AlertService
 
 
 class TelemetryService:
@@ -64,8 +65,13 @@ class TelemetryService:
 
         device.last_seen_at = recorded_at
 
+        AlertService.evaluate_temperature(
+            database=database,
+            telemetry=telemetry,
+        )
+
         try:
-            database.commit()
+            database.commit()   
         except IntegrityError as error:
             database.rollback()
 

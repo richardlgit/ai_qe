@@ -10,6 +10,8 @@ from edgepulse.app.database.config import Base
 from edgepulse.app.database.session import get_db
 from edgepulse.app.main import app
 from edgepulse.app.database.telemetry_entity import TelemetryEntity  # noqa: F401
+from edgepulse.app.database.alert_entity import AlertEntity  # noqa: F401
+
 
 
 TEST_DATABASE_URL = "sqlite://"
