@@ -3,10 +3,33 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 
+# def register_device(
+#     client: TestClient,
+#     device_id: str = "sensor-401",
+# ) -> None:
+#     response = client.post(
+#         "/devices",
+#         json={
+#             "device_id": device_id,
+#             "name": "Test Sensor",
+#             "device_type": "temperature_sensor",
+#         },
+#     )
+
+#     assert response.status_code == 201
+
+def authorization_headers(
+    token: str,
+) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}"
+    }
+
+
 def register_device(
     client: TestClient,
     device_id: str = "sensor-401",
-) -> None:
+) -> str:
     response = client.post(
         "/devices",
         json={
@@ -17,6 +40,14 @@ def register_device(
     )
 
     assert response.status_code == 201
+
+    token_response = client.post(
+        f"/devices/{device_id}/token"
+    )
+
+    assert token_response.status_code == 200
+
+    return token_response.json()["token"]
 
 
 def telemetry_payload(
@@ -37,11 +68,12 @@ def telemetry_payload(
 def test_ingest_telemetry(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     response = client.post(
         "/telemetry",
         json=telemetry_payload(),
+        headers=authorization_headers(token),
     )
 
     assert response.status_code == 201
@@ -54,20 +86,22 @@ def test_ingest_telemetry(
     assert response_body["pressure"] == 101.3
     assert response_body["idempotency_key"] == "reading-001"
     assert response_body["received_at"] is not None
+   
 
 
 def test_ingest_telemetry_updates_last_seen(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     ingestion_response = client.post(
         "/telemetry",
         json=telemetry_payload(),
+        headers=authorization_headers(token),
     )
 
     device_response = client.get(
-        "/devices/sensor-401"
+        "/devices/sensor-401",
     )
 
     assert ingestion_response.status_code == 201
@@ -78,14 +112,19 @@ def test_ingest_telemetry_updates_last_seen(
     )
 
 
+
 def test_reject_telemetry_for_unknown_device(
     client: TestClient,
 ) -> None:
+    token = register_device(client)
+
     response = client.post(
         "/telemetry",
         json=telemetry_payload(
             device_id="unknown-device"
         ),
+        headers=authorization_headers(token),
+
     )
 
     assert response.status_code == 404
@@ -99,18 +138,21 @@ def test_reject_telemetry_for_unknown_device(
 def test_reject_telemetry_for_inactive_device(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     status_response = client.patch(
         "/devices/sensor-401/status",
         json={
             "status": "inactive",
         },
+        headers=authorization_headers(token),
+
     )
 
     response = client.post(
         "/telemetry",
         json=telemetry_payload(),
+        headers=authorization_headers(token),
     )
 
     assert status_response.status_code == 200
@@ -126,18 +168,21 @@ def test_reject_telemetry_for_inactive_device(
 def test_reject_duplicate_idempotency_key(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     payload = telemetry_payload()
 
     first_response = client.post(
         "/telemetry",
         json=payload,
+        headers=authorization_headers(token),
     )
 
     second_response = client.post(
         "/telemetry",
         json=payload,
+        headers=authorization_headers(token),
+
     )
 
     assert first_response.status_code == 201
@@ -155,13 +200,14 @@ def test_reject_duplicate_idempotency_key(
 def test_list_device_telemetry(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     client.post(
         "/telemetry",
         json=telemetry_payload(
             idempotency_key="reading-001"
         ),
+        headers=authorization_headers(token),
     )
 
     client.post(
@@ -169,6 +215,7 @@ def test_list_device_telemetry(
         json=telemetry_payload(
             idempotency_key="reading-002"
         ),
+        headers=authorization_headers(token),
     )
 
     response = client.get(
@@ -182,7 +229,7 @@ def test_list_device_telemetry(
 def test_reject_future_timestamp(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     payload = telemetry_payload()
 
@@ -194,6 +241,7 @@ def test_reject_future_timestamp(
     response = client.post(
         "/telemetry",
         json=payload,
+        headers=authorization_headers(token),
     )
 
     assert response.status_code == 422
@@ -202,7 +250,7 @@ def test_reject_future_timestamp(
 def test_reject_timestamp_without_timezone(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     payload = telemetry_payload()
 
@@ -215,6 +263,7 @@ def test_reject_timestamp_without_timezone(
     response = client.post(
         "/telemetry",
         json=payload,
+        headers=authorization_headers(token),
     )
 
     assert response.status_code == 422
@@ -223,7 +272,7 @@ def test_reject_timestamp_without_timezone(
 def test_reject_out_of_range_temperature(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     payload = telemetry_payload()
     payload["temperature"] = 500.0
@@ -231,6 +280,7 @@ def test_reject_out_of_range_temperature(
     response = client.post(
         "/telemetry",
         json=payload,
+        headers=authorization_headers(token),
     )
 
     assert response.status_code == 422

@@ -6,12 +6,14 @@ from edgepulse.app.models.device import (
     DeviceCreate,
     DeviceResponse,
     DeviceStatusUpdate,
+    DeviceTokenResponse,
 )
 from edgepulse.app.services.device_exceptions import (
     DeviceAlreadyExistsError,
     DeviceNotFoundError,
 )
 from edgepulse.app.services.device_service import DeviceService
+from edgepulse.app.services.token_service import TokenService
 
 
 router = APIRouter(
@@ -61,6 +63,33 @@ def update_device_status(
         )
 
         return DeviceResponse.model_validate(device)
+
+    except DeviceNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@router.post(
+    "/{device_id}/token",
+    response_model=DeviceTokenResponse,
+)
+def issue_device_token(
+    device_id: str,
+    database: Session = Depends(get_db),
+) -> DeviceTokenResponse:
+    try:
+        token, issued_at = TokenService.issue_token(
+            database=database,
+            device_id=device_id,
+        )
+
+        return DeviceTokenResponse(
+            device_id=device_id,
+            token=token,
+            issued_at=issued_at,
+        )
 
     except DeviceNotFoundError as error:
         raise HTTPException(

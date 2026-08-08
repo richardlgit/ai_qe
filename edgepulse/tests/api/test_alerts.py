@@ -15,6 +15,15 @@ def register_device(
             "device_type": "temperature_sensor",
         },
     )
+    assert response.status_code == 201
+
+    token_response = client.post(
+        f"/devices/{device_id}/token"
+    )
+
+    assert token_response.status_code == 200
+
+    return token_response.json()["token"]
 
     assert response.status_code == 201
 
@@ -23,6 +32,7 @@ def submit_telemetry(
     client: TestClient,
     temperature: float,
     idempotency_key: str,
+    token: str,
     device_id: str = "sensor-501",
 ):
     return client.post(
@@ -36,18 +46,23 @@ def submit_telemetry(
             ).isoformat(),
             "idempotency_key": idempotency_key,
         },
+        headers={
+            "Authorization": f"Bearer {token}"
+        },
     )
+    
 
 
 def test_temperature_below_threshold_does_not_create_alert(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     telemetry_response = submit_telemetry(
         client=client,
         temperature=99.9,
         idempotency_key="below-threshold",
+        token=token,
     )
 
     alert_response = client.get("/alerts")
@@ -60,12 +75,13 @@ def test_temperature_below_threshold_does_not_create_alert(
 def test_temperature_at_threshold_creates_alert(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     telemetry_response = submit_telemetry(
         client=client,
         temperature=100.0,
         idempotency_key="at-threshold",
+        token=token,
     )
 
     alert_response = client.get("/alerts")
@@ -83,17 +99,17 @@ def test_temperature_at_threshold_creates_alert(
     assert alerts[0]["threshold_value"] == 100.0
     assert alerts[0]["acknowledged"] is False
     assert alerts[0]["acknowledged_at"] is None
-
-
+    
 def test_temperature_above_threshold_creates_alert(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     submit_telemetry(
         client=client,
         temperature=100.1,
         idempotency_key="above-threshold",
+        token=token,
     )
 
     response = client.get("/alerts")
@@ -101,17 +117,18 @@ def test_temperature_above_threshold_creates_alert(
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["measured_value"] == 100.1
-
+    
 
 def test_alert_references_telemetry_reading(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     telemetry_response = submit_telemetry(
         client=client,
         temperature=120.0,
         idempotency_key="reading-reference",
+        token=token,
     )
 
     alert_response = client.get("/alerts")
@@ -125,12 +142,13 @@ def test_alert_references_telemetry_reading(
 def test_get_alert_by_id(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     submit_telemetry(
         client=client,
         temperature=110.0,
         idempotency_key="get-alert",
+        token=token,
     )
 
     list_response = client.get("/alerts")
@@ -160,12 +178,13 @@ def test_get_unknown_alert_returns_not_found(
 def test_acknowledge_alert(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     submit_telemetry(
         client=client,
         temperature=115.0,
         idempotency_key="acknowledge-alert",
+        token=token,
     )
 
     list_response = client.get("/alerts")
@@ -183,12 +202,13 @@ def test_acknowledge_alert(
 def test_acknowledge_alert_is_idempotent(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     submit_telemetry(
         client=client,
         temperature=115.0,
         idempotency_key="idempotent-ack",
+        token=token,
     )
 
     list_response = client.get("/alerts")
@@ -214,18 +234,20 @@ def test_acknowledge_alert_is_idempotent(
 def test_filter_unacknowledged_alerts(
     client: TestClient,
 ) -> None:
-    register_device(client)
+    token = register_device(client)
 
     submit_telemetry(
         client=client,
         temperature=110.0,
         idempotency_key="first-alert",
+        token=token,
     )
 
     submit_telemetry(
         client=client,
         temperature=120.0,
         idempotency_key="second-alert",
+        token=token,
     )
 
     all_alerts = client.get("/alerts").json()

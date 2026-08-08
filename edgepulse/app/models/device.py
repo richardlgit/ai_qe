@@ -38,3 +38,9 @@ class DeviceResponse(BaseModel):
     status: DeviceStatus
     registered_at: datetime
     last_seen_at: datetime | None
+
+class DeviceTokenResponse(BaseModel):
+    device_id: str
+    token: str
+    token_type: str = "bearer"
+    issued_at: datetime

@@ -40,3 +40,13 @@ class DeviceEntity(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+    token_hash: Mapped[str | None] = mapped_column(
+    String(64),
+    nullable=True,
+    )
+
+    token_issued_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
