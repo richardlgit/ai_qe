@@ -33,7 +33,10 @@ exclude = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["edgepulse/tests"]
+testpaths = [
+    "edgepulse/tests",
+    "ai_qe/tests"
+]
 
 [tool.coverage.run]
 source = ["edgepulse", "ai_qe"]
