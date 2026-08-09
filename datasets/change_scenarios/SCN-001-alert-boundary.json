@@ -1,0 +1,26 @@
+{
+  "scenario_id": "SCN-001",
+  "title": "Alert threshold boundary regression",
+  "description": "A change to temperature threshold comparison causes telemetry exactly equal to the critical threshold to fail to generate an alert.",
+  "component": "alert_service",
+  "business_rule": "Temperature greater than or equal to the critical threshold must generate a critical alert.",
+  "critical_threshold": 100.0,
+  "defect_type": "boundary_condition",
+  "severity": "high",
+  "expected_risk_level": "high",
+  "expected_release_decision": "block",
+  "affected_files": [
+    "edgepulse/app/services/alert_service.py"
+  ],
+  "expected_tests": [
+    "test_temperature_at_threshold_creates_alert",
+    "test_alert_created_at_critical_threshold"
+  ],
+  "expected_failure_modes": [
+    "Temperature exactly equal to 100.0 does not create an alert.",
+    "Critical threshold boundary events can be silently missed."
+  ],
+  "historical_defects": [
+    "DEF-001"
+  ]
+}

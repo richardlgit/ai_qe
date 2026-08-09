@@ -1,0 +1,35 @@
+[
+  {
+    "component_id": "COMP-001",
+    "name": "alert_service",
+    "description": "Evaluates telemetry against configured thresholds and creates operational alerts.",
+    "criticality": "high",
+    "business_impact": "Failure can prevent operators from receiving critical equipment alerts.",
+    "owner": "quality-platform",
+    "dependencies": [
+      "telemetry_service"
+    ],
+    "files": [
+      "edgepulse/app/services/alert_service.py",
+      "edgepulse/app/database/alert_entity.py",
+      "edgepulse/app/api/alerts.py"
+    ]
+  },
+  {
+    "component_id": "COMP-002",
+    "name": "telemetry_service",
+    "description": "Validates and stores sensor telemetry.",
+    "criticality": "high",
+    "business_impact": "Failure can result in missing or corrupted sensor data.",
+    "owner": "device-platform",
+    "dependencies": [
+      "device_service",
+      "alert_service"
+    ],
+    "files": [
+      "edgepulse/app/services/telemetry_service.py",
+      "edgepulse/app/api/telemetry.py",
+      "edgepulse/app/database/telemetry_entity.py"
+    ]
+  }
+]
