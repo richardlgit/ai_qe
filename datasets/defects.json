@@ -1,0 +1,20 @@
+[
+  {
+    "defect_id": "DEF-001",
+    "title": "Critical temperature boundary alert missed",
+    "component": "alert_service",
+    "severity": "high",
+    "defect_type": "boundary_condition",
+    "description": "Temperature readings exactly equal to the configured critical threshold did not generate alerts.",
+    "root_cause": "Threshold comparison used a strict greater-than condition instead of greater-than-or-equal.",
+    "affected_files": [
+      "edgepulse/app/services/alert_service.py"
+    ],
+    "customer_impact": "A critical machine condition at the configured boundary could go undetected.",
+    "escaped_to_production": true,
+    "related_tests": [
+      "test_temperature_at_threshold_creates_alert",
+      "test_alert_created_at_critical_threshold"
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "test_id": "TEST-001",
+    "name": "test_temperature_below_threshold_does_not_create_alert",
+    "component": "alert_service",
+    "test_type": "api",
+    "priority": "high",
+    "execution_time_seconds": 0.2,
+    "historical_pass_rate": 1.0,
+    "flaky_score": 0.0
+  },
+  {
+    "test_id": "TEST-002",
+    "name": "test_temperature_at_threshold_creates_alert",
+    "component": "alert_service",
+    "test_type": "api",
+    "priority": "critical",
+    "execution_time_seconds": 0.2,
+    "historical_pass_rate": 1.0,
+    "flaky_score": 0.0
+  },
+  {
+    "test_id": "TEST-003",
+    "name": "test_temperature_above_threshold_creates_alert",
+    "component": "alert_service",
+    "test_type": "api",
+    "priority": "high",
+    "execution_time_seconds": 0.2,
+    "historical_pass_rate": 1.0,
+    "flaky_score": 0.0
+  },
+  {
+    "test_id": "TEST-004",
+    "name": "test_alert_created_at_critical_threshold",
+    "component": "alert_service",
+    "test_type": "unit",
+    "priority": "critical",
+    "execution_time_seconds": 0.1,
+    "historical_pass_rate": 1.0,
+    "flaky_score": 0.0
+  }
+]
