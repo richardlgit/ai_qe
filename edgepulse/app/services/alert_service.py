@@ -26,7 +26,7 @@ class AlertService:
     ) -> AlertEntity | None:
         threshold = CRITICAL_TEMPERATURE_THRESHOLD
 
-        if telemetry.temperature < threshold:
+        if telemetry.temperature <= threshold:
             return None
 
         alert = AlertEntity(
