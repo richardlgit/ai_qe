@@ -12,7 +12,8 @@ dependencies = [
     "uvicorn[standard]",
     "sqlalchemy",
     "pydantic",
-    "httpx"
+    "httpx",
+    "openai"
 ]
 
 [project.optional-dependencies]

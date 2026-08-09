@@ -3,6 +3,7 @@ uvicorn[standard]
 sqlalchemy
 pydantic
 httpx
+openai
 
 [dev]
 pytest

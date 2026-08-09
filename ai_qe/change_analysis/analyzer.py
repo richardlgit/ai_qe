@@ -20,21 +20,28 @@ from ai_qe.change_analysis.test_selector import (
     SelectedTest,
     select_tests,
 )
+from ai_qe.agents.models import AIChangeAnalysis
+from dataclasses import dataclass, field
+from enum import Enum
 
+class AIStatus(str, Enum):
+    NOT_REQUESTED = "not_requested"
+    SUCCESS = "success"
+    UNAVAILABLE = "unavailable"
 
 @dataclass
 class ChangeAnalysisResult:
     base_revision: str
     target_revision: str
     changes: list[GitChange]
-    affected_components: list[
-        AffectedComponent
-    ]
+    affected_components: list[AffectedComponent]
     selected_tests: list[SelectedTest]
-    historical_defects: list[
-        MatchedDefect
-    ]
+    historical_defects: list[MatchedDefect]
     risk: RiskAssessment
+
+    ai_analysis: AIChangeAnalysis | None = None
+    ai_status: str = "not_requested"
+    ai_error: str | None = None
 
 
 def analyze_change(
@@ -89,7 +96,7 @@ def analyze_change(
         ],
     )
 
-    return ChangeAnalysisResult(
+    return ChangeAnalysisResult(    
         base_revision=base_revision,
         target_revision=target_revision,
         changes=changes,
@@ -98,3 +105,44 @@ def analyze_change(
         historical_defects=defects,
         risk=risk,
     )
+
+
+def analyze_change_with_ai(
+    base_revision: str,
+    target_revision: str,
+    agent,
+) -> ChangeAnalysisResult:
+    result = analyze_change(
+        base_revision=base_revision,
+        target_revision=target_revision,
+    )
+
+    combined_diff = "\n\n".join(
+        change.diff
+        for change in result.changes
+    )
+
+    if not combined_diff.strip():
+        return result
+
+    try:
+        ai_analysis = agent.analyze(
+            diff=combined_diff,
+            affected_components=result.affected_components,
+        )
+
+        result.ai_analysis = ai_analysis
+        result.ai_status = AIStatus.SUCCESS
+
+    except Exception as exc:
+        result.ai_status = AIStatus.UNAVAILABLE
+        result.ai_error = str(exc)
+
+        print()
+        print("AI enrichment unavailable.")
+        print(f"Reason: {exc}")
+        print("Continuing with deterministic analysis.")    
+
+    return result
+
+    

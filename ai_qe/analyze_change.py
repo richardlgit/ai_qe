@@ -6,6 +6,14 @@ from ai_qe.change_analysis.analyzer import (
     analyze_change,
 )
 
+from ai_qe.agents.change_analysis_agent import (
+    ChangeAnalysisAgent,
+)
+from ai_qe.change_analysis.analyzer import (
+    analyze_change,
+    analyze_change_with_ai,
+)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -15,6 +23,12 @@ def main() -> None:
         )
     )
 
+    parser.add_argument(
+    "--ai",
+    action="store_true",
+    help="Enrich deterministic analysis with LLM reasoning",
+    )
+    
     parser.add_argument(
         "--base",
         required=True,
@@ -35,7 +49,16 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    result = analyze_change(
+    if args.ai:
+        agent = ChangeAnalysisAgent()
+
+        result = analyze_change_with_ai(
+        base_revision=args.base,
+        target_revision=args.target,
+        agent=agent,
+    )
+    else:
+        result = analyze_change(
         base_revision=args.base,
         target_revision=args.target,
     )
@@ -48,7 +71,7 @@ def main() -> None:
             )
         )
         return
-
+    
     print()
     print("=== EdgePulse QE Change Analysis ===")
     print()
@@ -86,6 +109,57 @@ def main() -> None:
         print(
             f"  - {defect.defect_id}: "
             f"{defect.title}"
+        )
+
+
+    if result.ai_analysis is not None:
+        print()
+        print("AI Change Analysis:")
+        print(
+            f"  Summary: "
+            f"{result.ai_analysis.change_summary}"
+        )
+
+        print()
+        print("  Behavioral changes:")
+
+        for change in (
+            result.ai_analysis.behavioral_changes
+        ):
+            print(
+                f"    - {change}"
+            )
+
+        print()
+        print("  Likely failure modes:")
+
+        for failure in (
+            result.ai_analysis.likely_failure_modes
+        ):
+            print(
+                f"    - [{failure.severity}] "
+                f"{failure.description}"
+            )
+
+            print(
+                f"      Reason: "
+                f"{failure.reasoning}"
+            )
+
+        print()
+        print("  Recommended test focus:")
+
+        for focus in (
+            result.ai_analysis.recommended_test_focus
+        ):
+            print(
+                f"    - {focus}"
+            )
+
+        print()
+        print(
+            "  Confidence: "
+            f"{result.ai_analysis.confidence:.2f}"
         )
 
     print()

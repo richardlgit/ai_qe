@@ -8,6 +8,7 @@ Requires-Dist: uvicorn[standard]
 Requires-Dist: sqlalchemy
 Requires-Dist: pydantic
 Requires-Dist: httpx
+Requires-Dist: openai
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: pytest-cov; extra == "dev"
