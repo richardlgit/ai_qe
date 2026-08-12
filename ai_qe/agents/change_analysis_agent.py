@@ -1,24 +1,16 @@
 import json
-import os
-
-from openai import OpenAI
 
 from ai_qe.agents.models import AIChangeAnalysis
 from ai_qe.change_analysis.component_mapper import (
     AffectedComponent,
 )
-from openai import (
-    OpenAI,
-    APIError,
-    RateLimitError,
-    APITimeoutError,
-)
+from ai_qe.llm.base import LLMProvider
 
 
 SYSTEM_PROMPT = """
 You are a senior Quality Engineering change-risk analyst.
 
-Analyze software code changes from a Quality Engineering perspective.
+Analyze software changes from a Quality Engineering perspective.
 
 Focus on:
 - behavioral changes
@@ -29,35 +21,26 @@ Focus on:
 - reliability implications
 - data integrity
 - missing validation
-- concurrency or retry behavior
+- concurrency and retry behavior
 - backward compatibility
 
 Do not decide whether a release should ship.
 
-Do not invent facts that are not supported by the supplied code diff
+Do not invent facts unsupported by the supplied code diff
 or component context.
 
 Clearly distinguish likely risks from confirmed defects.
+Confidence must be a decimal between 0.0 and 1.0.
+For example, use 0.95, not 95.
 """
 
 
 class ChangeAnalysisAgent:
     def __init__(
         self,
-        model: str | None = None,
+        provider: LLMProvider,
     ) -> None:
-        if not os.getenv("OPENAI_API_KEY"):
-            raise RuntimeError(
-                "OPENAI_API_KEY is not configured."
-            )
-
-        self.client = OpenAI()
-
-        self.model = (
-            model
-            or os.getenv("AI_QE_MODEL")
-            or "gpt-5-nano"
-        )
+        self.provider = provider
 
     def analyze(
         self,
@@ -85,32 +68,19 @@ Git diff:
 
 {diff}
 
-Return a Quality Engineering analysis.
+Identify:
+- the behavioral change
+- likely failure modes
+- regression risks
+- relevant test-focus areas
+- your confidence in the analysis
 
-Pay particular attention to changes in comparison operators,
-conditional logic, validation logic, retry behavior, authentication,
-error handling, persistence, and boundary conditions.
+Base your conclusions only on the supplied diff and
+component context.
 """
-        try:
-            response = self.client.responses.parse(
-            model=self.model,
-            input=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt,
-                },
-            ],
-            text_format=AIChangeAnalysis,
-        )
 
-            return response.output_parsed
-        except (
-            RateLimitError,
-            APITimeoutError,
-            APIError,
-        ):
-            raise
+        return self.provider.generate_structured(
+            system_prompt=SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            response_model=AIChangeAnalysis,
+        )

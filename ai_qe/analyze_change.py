@@ -2,6 +2,10 @@ import argparse
 import json
 from dataclasses import asdict
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from ai_qe.change_analysis.analyzer import (
     analyze_change,
 )
@@ -12,6 +16,10 @@ from ai_qe.agents.change_analysis_agent import (
 from ai_qe.change_analysis.analyzer import (
     analyze_change,
     analyze_change_with_ai,
+)
+
+from ai_qe.llm.ollama_provider import (
+    OllamaProvider,
 )
 
 
@@ -50,18 +58,26 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.ai:
-        agent = ChangeAnalysisAgent()
+        from ai_qe.llm.factory import (
+            create_provider,
+        )
+
+        provider = create_provider()
+
+        agent = ChangeAnalysisAgent(
+            provider=provider,
+        )
 
         result = analyze_change_with_ai(
-        base_revision=args.base,
-        target_revision=args.target,
-        agent=agent,
-    )
+            base_revision=args.base,
+            target_revision=args.target,
+            agent=agent,
+        )
     else:
         result = analyze_change(
-        base_revision=args.base,
-        target_revision=args.target,
-    )
+            base_revision=args.base,
+            target_revision=args.target,
+        )
 
     if args.json:
         print(

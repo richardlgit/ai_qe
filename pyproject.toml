@@ -13,7 +13,8 @@ dependencies = [
     "sqlalchemy",
     "pydantic",
     "httpx",
-    "openai"
+    "openai",
+    "ollama"
 ]
 
 [project.optional-dependencies]
