@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from ai_qe.datasets import loader as load
 
 from ai_qe.change_analysis.dataset_loader import (
     load_json,
@@ -19,7 +20,8 @@ def match_historical_defects(
     affected_components: list[str],
     changed_files: list[str],
 ) -> list[MatchedDefect]:
-    defects = load_json("defects.json")
+    defects = load.load_historical_defects()
+    #defects = load_json("defects.json")
 
     matches: list[MatchedDefect] = []
 

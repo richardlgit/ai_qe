@@ -1,6 +1,10 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+)
 
 
 class FailureSeverity(str, Enum):
@@ -11,28 +15,38 @@ class FailureSeverity(str, Enum):
 
 
 class FailureMode(BaseModel):
-    description: str
+    description: str = Field(
+        min_length=5
+    )
+
     severity: FailureSeverity
-    reasoning: str
+
+    reasoning: str = Field(
+        min_length=5
+    )
 
 
 class AIChangeAnalysis(BaseModel):
-    change_summary: str
-
-    behavioral_changes: list[str] = Field(
-        default_factory=list
+    change_summary: str = Field(
+        min_length=10
     )
 
-    likely_failure_modes: list[FailureMode] = Field(
-        default_factory=list
+    behavioral_changes: list[str] = Field(
+        min_length=1
+    )
+
+    likely_failure_modes: list[
+        FailureMode
+    ] = Field(
+        min_length=1
     )
 
     risk_indicators: list[str] = Field(
-        default_factory=list
+        min_length=1
     )
 
     recommended_test_focus: list[str] = Field(
-        default_factory=list
+        min_length=2
     )
 
     confidence: float = Field(
@@ -40,7 +54,10 @@ class AIChangeAnalysis(BaseModel):
         le=1.0,
     )
 
-    @field_validator("confidence", mode="before")
+    @field_validator(
+        "confidence",
+        mode="before",
+    )
     @classmethod
     def normalize_confidence(
         cls,

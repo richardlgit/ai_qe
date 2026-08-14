@@ -1,8 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from ai_qe.change_analysis.dataset_loader import (
-    load_json,
-)
+from ai_qe.datasets import loader as load
 
 
 PRIORITY_ORDER = {
@@ -20,16 +18,19 @@ class SelectedTest:
     component: str
     test_type: str
     priority: str
-    execution_time_seconds: float
-    flaky_score: float
+
+    test_file: str | None = None
+    execution_time_seconds: float = 0.0
+    flaky_score: float = 0.0
+    covers: list[str] = field(default_factory=list)
+    business_rules: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 def select_tests(
     affected_components: list[str],
 ) -> list[SelectedTest]:
-    inventory = load_json(
-        "test_inventory.json"
-    )
+    inventory = load.load_test_inventory()
 
     selected: list[SelectedTest] = []
 
@@ -44,12 +45,33 @@ def select_tests(
                 component=test["component"],
                 test_type=test["test_type"],
                 priority=test["priority"],
-                execution_time_seconds=test[
-                    "execution_time_seconds"
-                ],
-                flaky_score=test[
-                    "flaky_score"
-                ],
+
+                test_file=test.get("test_file"),
+
+                execution_time_seconds=test.get(
+                    "execution_time_seconds",
+                    0.0,
+                ),
+
+                flaky_score=test.get(
+                    "flaky_score",
+                    0.0,
+                ),
+
+                covers=test.get(
+                    "covers",
+                    [],
+                ),
+
+                business_rules=test.get(
+                    "business_rules",
+                    [],
+                ),
+
+                tags=test.get(
+                    "tags",
+                    [],
+                ),
             )
         )
 

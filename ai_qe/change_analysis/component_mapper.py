@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from ai_qe.datasets import loader as load
 
 from ai_qe.change_analysis.dataset_loader import (
     load_json,
@@ -17,7 +18,7 @@ class AffectedComponent:
 def map_files_to_components(
     changed_files: list[str],
 ) -> list[AffectedComponent]:
-    components = load_json("components.json")
+    components = load.load_component_map()
 
     affected: list[AffectedComponent] = []
 

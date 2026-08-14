@@ -4,6 +4,7 @@
     "name": "test_temperature_below_threshold_does_not_create_alert",
     "component": "alert_service",
     "test_type": "api",
+    "test_file": "edgepulse/tests/api/test_alerts.py",
     "priority": "high",
     "execution_time_seconds": 0.2,
     "historical_pass_rate": 1.0,
@@ -14,6 +15,7 @@
     "name": "test_temperature_at_threshold_creates_alert",
     "component": "alert_service",
     "test_type": "api",
+    "test_file": "edgepulse/tests/api/test_alerts.py",
     "priority": "critical",
     "execution_time_seconds": 0.2,
     "historical_pass_rate": 1.0,
@@ -24,19 +26,35 @@
     "name": "test_temperature_above_threshold_creates_alert",
     "component": "alert_service",
     "test_type": "api",
+    "test_file": "edgepulse/tests/api/test_alerts.py",
     "priority": "high",
     "execution_time_seconds": 0.2,
     "historical_pass_rate": 1.0,
     "flaky_score": 0.0
   },
   {
-    "test_id": "TEST-004",
-    "name": "test_alert_created_at_critical_threshold",
-    "component": "alert_service",
-    "test_type": "unit",
-    "priority": "critical",
-    "execution_time_seconds": 0.1,
-    "historical_pass_rate": 1.0,
-    "flaky_score": 0.0
-  }
+    
+  "test_id": "TEST-004",
+  "name": "test_alert_created_at_critical_threshold",
+  "component": "alert_service",
+  "priority": "critical",
+  "test_type": "unit",
+  "test_file": "edgepulse/tests/unit/test_alert_service.py",
+  "covers": [
+    "critical_threshold",
+    "temperature_boundary"
+  ],
+  "business_rules": [
+    "Alert is created when temperature >= threshold."
+  ],
+  "fixtures": [
+    "client",
+    "registered_device"
+  ],
+  "tags": [
+    "boundary",
+    "regression",
+    "alert"
+  ]
+}
 ]

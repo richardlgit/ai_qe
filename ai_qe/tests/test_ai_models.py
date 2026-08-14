@@ -27,7 +27,8 @@ def test_ai_change_analysis_schema():
             "Critical conditional changed."
         ],
         recommended_test_focus=[
-            "Threshold boundary tests."
+        "Exact threshold boundary test.",
+        "Values immediately below and above the threshold.",
         ],
         confidence=0.95,
     )

@@ -77,6 +77,18 @@ Identify:
 
 Base your conclusions only on the supplied diff and
 component context.
+
+Requirements:
+- change_summary must clearly describe the behavioral impact.
+- behavioral_changes must contain at least 1 item.
+- likely_failure_modes must contain at least 1 item.
+- risk_indicators must contain at least 1 item.
+- recommended_test_focus must contain at least 2 items.
+- Do not return empty strings or empty arrays.
+- Confidence must be between 0.0 and 1.0.
+
+For comparison changes, explicitly analyze boundary behavior
+such as values below, equal to, and above the threshold.
 """
 
         return self.provider.generate_structured(

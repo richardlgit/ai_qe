@@ -1,0 +1,41 @@
+{
+  "scenario_id": "SCN-001",
+  "expected_affected_components": [
+    "alert_service"
+  ],
+  "expected_risk_score_range": {
+    "min": 70,
+    "max": 100
+  },
+  "expected_risk_level": "HIGH",
+  "expected_test_selection": [
+    "TEST-002",
+    "TEST-004"
+  ],
+  "expected_historical_defects": [
+    "DEF-001"
+  ],
+  "expected_failure_modes": [
+    "Critical temperature event at threshold is missed."
+  ],
+  "expected_release_decision": "BLOCK",
+
+"ai_expectations": {
+    "behavioral_concepts": [
+      "threshold",
+      "equality",
+      "inclusive",
+      "exclusive"
+    ],
+    "failure_mode_concepts": [
+      "missed alert",
+      "boundary",
+      "equal to threshold"
+    ],
+    "test_focus_concepts": [
+      "below threshold",
+      "exact threshold",
+      "above threshold"
+    ]
+  }
+}

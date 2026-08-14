@@ -1,0 +1,109 @@
+from dataclasses import dataclass, field
+
+from ai_qe.evaluation.models import (
+    EvaluationCheck,
+)
+
+
+def evaluate_subset(
+    name: str,
+    actual_values: list[str],
+    expected_values: list[str],
+) -> EvaluationCheck:
+    actual = set(actual_values)
+    expected = set(expected_values)
+
+    if not expected:
+        score = 1.0
+    else:
+        score = (
+            len(actual.intersection(expected))
+            / len(expected)
+        )
+
+    return EvaluationCheck(
+        name=name,
+        passed=score == 1.0,
+        score=score,
+        details=(
+            f"expected={sorted(expected)}, "
+            f"actual={sorted(actual)}"
+        ),
+    )
+
+
+def evaluate_exact_value(
+    name: str,
+    actual: str,
+    expected: str,
+) -> EvaluationCheck:
+    passed = actual == expected
+
+    return EvaluationCheck(
+        name=name,
+        passed=passed,
+        score=1.0 if passed else 0.0,
+        details=(
+            f"expected={expected}, "
+            f"actual={actual}"
+        ),
+    )
+
+@dataclass
+class EvaluationCheck:
+    name: str
+    passed: bool
+    score: float
+    details: str = ""
+
+
+@dataclass
+class ScenarioEvaluation:
+    scenario_id: str
+    checks: list[EvaluationCheck] = field(
+        default_factory=list
+    )
+
+    @property
+    def overall_score(self) -> float:
+        if not self.checks:
+            return 0.0
+
+        return sum(
+            check.score
+            for check in self.checks
+        ) / len(self.checks)
+    
+
+@lru_cache(maxsize=None)
+def load_changed_scenario(
+    scenario_id: str,
+):
+    scenario_files = {
+        "SCN-001": "SCN-001-alert-boundary.json",
+    }
+
+    filename = scenario_files.get(
+        scenario_id
+    )
+
+    if filename is None:
+        raise ValueError(
+            f"Unknown scenario: {scenario_id}"
+        )
+
+    return load_json(
+        f"changed_scenarios/{filename}"
+    )
+
+
+@lru_cache(maxsize=None)
+def load_changed_scenario_expected(
+    scenario_id: str,
+):
+    filename = (
+        f"changed_scenarios/"
+        f"{scenario_id}-expected.json"
+    )
+
+    return load_json(filename)
