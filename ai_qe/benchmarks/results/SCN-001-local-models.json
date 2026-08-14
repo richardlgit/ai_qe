@@ -1,0 +1,68 @@
+{
+  "benchmark_id": "BENCH-SCN-001-LOCAL-001",
+  "scenario_id": "SCN-001",
+  "description": "Local model comparison for alert threshold boundary regression",
+  "evaluation_version": "v1",
+  "results": [
+    {
+      "provider": "ollama",
+      "model": "deepseek-r1:1.5b",
+      "latency_seconds": 82.2,
+      "deterministic_score": 1.0,
+      "ai_analysis_score": 0.083,
+      "combined_score": 0.656,
+      "semantic_assessment": "poor",
+      "notes": [
+        "Incorrectly interpreted the condition as inverted.",
+        "Failed to identify the equality boundary behavior.",
+        "Failure-mode reasoning was incorrect.",
+        "Test recommendations did not target the regression boundary."
+      ]
+    },
+    {
+      "provider": "ollama",
+      "model": "qwen3:4b-instruct",
+      "latency_seconds": 113.5,
+      "deterministic_score": 1.0,
+      "ai_analysis_score": 0.806,
+      "combined_score": 0.927,
+      "semantic_assessment": "strong",
+      "notes": [
+        "Correctly identified the change from < to <=.",
+        "Correctly identified suppression of the alert at equality.",
+        "Correctly identified the missed-alert failure mode.",
+        "Recommended below, equal, and above threshold testing."
+      ]
+    },
+    {
+      "provider": "ollama",
+      "model": "phi4-mini",
+      "latency_seconds": 66.4,
+      "deterministic_score": 1.0,
+      "ai_analysis_score": 0.417,
+      "combined_score": 0.781,
+      "semantic_assessment": "mixed",
+      "notes": [
+        "Correctly identified the missed alert at the threshold.",
+        "Incorrectly described alert-generation behavior.",
+        "Causal reasoning did not accurately explain the no-alert branch.",
+        "Test-focus reasoning was partially incorrect."
+      ]
+    },
+    {
+      "provider": "ollama",
+      "model": "gemma3:4b",
+      "latency_seconds": 107.6,
+      "deterministic_score": 1.0,
+      "ai_analysis_score": 0.583,
+      "combined_score": 0.844,
+      "semantic_assessment": "mixed",
+      "notes": [
+        "Recognized the boundary-condition change.",
+        "Incorrectly claimed <= causes alert generation.",
+        "Generated unsupported failure modes involving temperature spikes.",
+        "Correctly recommended exact-threshold boundary testing."
+      ]
+    }
+  ]
+}
