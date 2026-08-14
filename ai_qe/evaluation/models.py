@@ -8,7 +8,7 @@ class EvaluationCheck:
     score: float
     category: str = "deterministic"
     details: str = ""
-
+    weight: float = 1.0
 
 @dataclass
 class ScenarioEvaluation:
@@ -40,7 +40,15 @@ class ScenarioEvaluation:
         if not self.checks:
             return 0.0
 
-        return sum(
-            check.score
+        total_weight = sum(
+            check.weight
             for check in self.checks
-        ) / len(self.checks)
+        )
+
+        if total_weight == 0:
+            return 0.0
+
+        return sum(
+            check.score * check.weight
+            for check in self.checks
+        ) / total_weight

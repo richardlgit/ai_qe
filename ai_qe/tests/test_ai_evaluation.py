@@ -65,13 +65,30 @@ def test_ai_analysis_matches_expected_concepts():
         expectations=expectations,
     )
 
-    assert len(checks) == 3
+    assert len(checks) == 6
 
-    assert all(
-        check.passed
-        for check in checks
+    concept_checks = {
+    check.name: check
+    for check in checks
+}
+
+    assert (
+        concept_checks[
+            "AI behavioral understanding"
+        ].passed
     )
 
+    assert (
+        concept_checks[
+            "AI failure mode detection"
+        ].passed
+    )
+
+    assert (
+        concept_checks[
+            "AI test focus"
+        ].passed
+    )
     assert all(
         check.category == "ai"
         for check in checks
@@ -136,14 +153,203 @@ def test_ai_analysis_matches_qwen_style_synonyms():
         expectations=expectations,
     )
 
-    assert len(checks) == 3
+    assert len(checks) == 6
 
-    assert all(
-        check.passed
-        for check in checks
+    concept_checks = {
+    check.name: check
+    for check in checks
+}
+
+    assert (
+        concept_checks[
+            "AI behavioral understanding"
+        ].passed
+    )
+
+    assert (
+        concept_checks[
+            "AI failure mode detection"
+        ].passed
+    )
+
+    assert (
+        concept_checks[
+            "AI test focus"
+        ].passed
     )
 
     assert all(
         check.category == "ai"
         for check in checks
     )
+
+#v2 
+def test_ai_evaluation_detects_wrong_control_flow():
+    analysis = AIChangeAnalysis(
+        change_summary=(
+            "The threshold comparison changed."
+        ),
+        behavioral_changes=[
+            (
+                "The alert service now generates an alert "
+                "when temperature is less than or equal "
+                "to the threshold."
+            )
+        ],
+        likely_failure_modes=[
+            FailureMode(
+                description=(
+                    "Boundary behavior changed."
+                ),
+                severity=FailureSeverity.HIGH,
+                reasoning=(
+                    "The <= comparison causes additional "
+                    "alerts below the threshold."
+                ),
+            )
+        ],
+        risk_indicators=[
+            "Boundary condition changed."
+        ],
+        recommended_test_focus=[
+            "below threshold",
+            "exact threshold",
+        ],
+        confidence=0.9,
+    )
+
+    expectations = {
+        "behavioral_concepts": [
+            "threshold",
+        ],
+        "failure_mode_concepts": [
+            "boundary",
+        ],
+        "test_focus_concepts": [
+            "below threshold",
+            "exact threshold",
+        ],
+        "expected_behavior_rules": [
+            (
+                "temperature equal to threshold "
+                "must create an alert"
+            )
+        ],
+        "expected_causal_concepts": [
+            "equality enters the no-alert branch"
+        ],
+        "contradiction_patterns": [
+            (
+                "alert service now generates an alert "
+                "when temperature is less than or equal"
+            )
+        ],
+    }
+
+
+    checks = evaluate_ai_analysis(
+        analysis=analysis,
+        expectations=expectations,
+    )
+
+    contradiction_check = next(
+        check
+        for check in checks
+        if check.name
+        == "AI contradiction check"
+    )
+
+    assert contradiction_check.passed is False
+    assert contradiction_check.score < 1.0
+
+def test_ai_evaluation_rewards_correct_causal_reasoning():
+    analysis = AIChangeAnalysis(
+        change_summary=(
+            "The change expands the no-alert branch "
+            "to include equality at the threshold."
+        ),
+        behavioral_changes=[
+            (
+                "Temperature equal to the threshold "
+                "previously created an alert but now "
+                "returns no alert."
+            )
+        ],
+        likely_failure_modes=[
+            FailureMode(
+                description=(
+                    "The critical threshold alert "
+                    "can be missed."
+                ),
+                severity=FailureSeverity.HIGH,
+                reasoning=(
+                    "Changing < to <= means the equality "
+                    "case now enters the return None "
+                    "no-alert branch before alert creation."
+                ),
+            )
+        ],
+        risk_indicators=[
+            "Critical boundary logic changed."
+        ],
+        recommended_test_focus=[
+            "below threshold",
+            "exact threshold",
+            "above threshold",
+        ],
+        confidence=0.98,
+    )
+
+    expectations = {
+        "behavioral_concepts": [
+            "threshold",
+            "equality",
+        ],
+        "failure_mode_concepts": [
+            "missed alert",
+            "boundary",
+        ],
+        "test_focus_concepts": [
+            "below threshold",
+            "exact threshold",
+            "above threshold",
+        ],
+        "expected_behavior_rules": [
+            (
+                "temperature equal to threshold "
+                "must create an alert"
+            )
+        ],
+        "expected_causal_concepts": [
+            "return none",
+            "equality enters the no-alert branch",
+        ],
+        "contradiction_patterns": [
+            (
+                "alert is generated when temperature "
+                "is less than or equal"
+            )
+        ],
+    }
+
+    checks = evaluate_ai_analysis(
+        analysis=analysis,
+        expectations=expectations,
+    )
+
+    causal = next(
+        check
+        for check in checks
+        if check.name
+        == "AI causal reasoning"
+    )
+
+    contradiction = next(
+        check
+        for check in checks
+        if check.name
+        == "AI contradiction check"
+    )
+
+    assert causal.passed is True
+    assert contradiction.passed is True

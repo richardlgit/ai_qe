@@ -88,6 +88,9 @@ def main() -> None:
     print()
 
     print(
+    "Evaluation methodology: V2"
+    )
+    print(
         f"Scenario: "
         f"{scenario['scenario_id']} - "
         f"{scenario['title']}"
