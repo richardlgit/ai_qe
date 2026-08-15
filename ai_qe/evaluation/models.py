@@ -18,22 +18,30 @@ class ScenarioEvaluation:
     )
 
     def score_for_category(
-        self,
-        category: str,
-        ) -> float:
+    self,
+    category: str,
+) -> float:
         checks = [
-        check
-        for check in self.checks
-        if check.category == category
+            check
+            for check in self.checks
+            if check.category == category
         ]
 
         if not checks:
             return 0.0
 
-        return sum(
-            check.score
+        total_weight = sum(
+            check.weight
             for check in checks
-        ) / len(checks)
+        )
+
+        if total_weight == 0:
+            return 0.0
+
+        return sum(
+            check.score * check.weight
+            for check in checks
+        ) / total_weight
 
     @property
     def overall_score(self) -> float:
