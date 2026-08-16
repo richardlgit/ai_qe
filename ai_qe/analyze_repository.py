@@ -66,6 +66,32 @@ def main() -> None:
     else:
         print("  - None discovered")
 
+    print()
+    print("Recommended tests:")
+
+    if result.selected_tests:
+        for test in result.selected_tests:
+            print(f"  - {test}")
+    else:
+        print("  - None discovered")
+
+    print()
+    print(
+        f"Risk: "
+        f"{result.risk.score}/100 "
+        f"({result.risk.level})"
+    )
+
+    print(
+        f"Release decision: "
+        f"{result.risk.decision}"
+    )
+
+    print()
+    print("Risk reasons:")
+
+    for reason in result.risk.reasons:
+        print(f"  - {reason}")
 
 if __name__ == "__main__":
     main()
