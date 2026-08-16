@@ -65,12 +65,10 @@ def main() -> None:
 
 
     print()
-    print(
-        "Configuration written to:"
-    )
-
+    print("Generated:")
     print("  .ai-qe/repository.json")
-    print("  .ai-qe/components.json")    
+    print("  .ai-qe/components.json")
+    print("  .ai-qe/test_component_map.json")  
 
 
 if __name__ == "__main__":

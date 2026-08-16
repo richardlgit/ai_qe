@@ -1,5 +1,11 @@
 from dataclasses import dataclass, field
 
+test_component_map: dict[
+    str,
+    list[str],
+] = field(
+    default_factory=dict
+)
 
 @dataclass
 class SourceFile:
@@ -13,8 +19,6 @@ class DiscoveredTest:
     name: str
     test_file: str
     test_type: str = "unknown"
-
-
 
 
 @dataclass
@@ -56,4 +60,11 @@ class RepositoryInventory:
         DiscoveredComponent
     ] = field(
         default_factory=list
+    )
+
+    test_component_map: dict[
+        str,
+        list[str],
+    ] = field(
+        default_factory=dict
     )
