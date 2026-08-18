@@ -42,6 +42,15 @@ Important principles:
 - Keep the final QE recommendation consistent with the test-intent analysis.
 - The deterministic risk score and release decision are authoritative.
   Do not override or repeat them as your own decision.
+For every test supplied in selected_tests, include exactly one entry
+in test_analysis.related_tests.
+
+Do not omit a supplied test even if it is unaffected by the change.
+Classify unaffected tests as "unaffected".
+
+test_analysis.related_tests may be empty only when selected_tests is empty.
+The number of entries in test_analysis.related_tests must equal the
+number of tests supplied in selected_tests.
 """
 
 
@@ -75,42 +84,68 @@ class RepositoryEnrichmentAgent:
             },
         }
 
+        
         user_prompt = f"""
-Analyze this repository change.
+            Analyze this repository change.
 
-Repository evidence:
+            Repository evidence:
 
-{json.dumps(context, indent=2)}
+            {json.dumps(context, indent=2)}
 
-Git diff:
+            Git diff:
 
-{combined_diff}
+            {combined_diff}
 
-Return BOTH:
+            Return BOTH:
 
-A. Test intent analysis
-- infer each related test's behavioral intent from its source,
-- classify its relevance,
-- identify regression detectors,
-- identify unaffected or incomplete coverage,
-- identify redundancy only with strong evidence,
-- identify coverage gaps.
+            A. Test intent analysis
+            - infer each related test's behavioral intent from its source,
+            - classify its relevance,
+            - identify regression detectors,
+            - identify unaffected or incomplete coverage,
+            - identify redundancy only with strong evidence,
+            - identify coverage gaps.
 
-B. Final QE analysis
-- explain the behavioral change,
-- identify likely failure modes,
-- assess test sufficiency,
-- recommend focused test behavior,
-- reconcile the final recommendation with the test-intent evidence.
+            B. Final QE analysis
+            - explain the behavioral change,
+            - identify likely failure modes,
+            - assess test sufficiency,
+            - recommend focused test behavior,
+            - reconcile the final recommendation with the test-intent evidence.
 
-If the changed implementation conflicts with an existing test
-expectation, explicitly call out that conflict.
+            If the changed implementation conflicts with an existing test
+            expectation, explicitly call out that conflict.
 
-Confidence values must be between 0.0 and 1.0.
-"""
+            Confidence values must be between 0.0 and 1.0.
+            """
 
-        return self.provider.generate_structured(
-            system_prompt=SYSTEM_PROMPT,
-            user_prompt=user_prompt,
-            response_model=RepositoryAIEnrichment,
+        enrichment = self.provider.generate_structured(
+                system_prompt=SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                response_model=RepositoryAIEnrichment,
+            )
+
+        expected_tests = {
+            test["name"]
+            for test in test_context
+        }
+
+        analyzed_tests = {
+            test.test_name
+            for test
+            in enrichment.test_analysis.related_tests
+        }
+
+        missing_tests = (
+            expected_tests - analyzed_tests
         )
+
+        if missing_tests:
+            raise ValueError(
+                "AI test analysis omitted discovered tests: "
+                + ", ".join(
+                    sorted(missing_tests)
+                )
+            )
+
+        return enrichment
