@@ -6,6 +6,82 @@ from pydantic import (
     field_validator,
 )
 
+from pydantic import BaseModel, Field
+
+class TestRelevance(str, Enum):
+    REGRESSION_DETECTOR = "regression_detector"
+    RELEVANT_COMPLETE = "relevant_complete"
+    RELEVANT_INCOMPLETE = "relevant_incomplete"
+    POSSIBLY_OBSOLETE = "possibly_obsolete"
+    REDUNDANT = "redundant"
+    UNAFFECTED = "unaffected"
+
+class TestIntentAnalysis(BaseModel):
+    test_name: str
+
+    classification: TestRelevance
+
+    intent: str = Field(
+        min_length=5
+    )
+
+    reasoning: str = Field(
+        min_length=10
+    )
+
+class RepositoryAIEnrichment(BaseModel):
+    test_analysis: RepositoryTestAnalysis
+    qe_analysis: RepositoryAIAnalysis
+
+class RepositoryTestAnalysis(BaseModel):
+    coverage_status: str
+
+    related_tests: list[TestIntentAnalysis] = Field(
+        default_factory=list
+    )
+
+    coverage_gaps: list[str] = Field(
+        default_factory=list
+    )
+
+    recommended_tests: list[str] = Field(
+        default_factory=list
+    )
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
+
+class RepositoryAIAnalysis(BaseModel):
+    change_summary: str = Field(
+        min_length=10
+    )
+
+    behavioral_changes: list[str] = Field(
+        min_length=1
+    )
+
+    likely_failure_modes: list[FailureMode] = Field(
+        min_length=1
+    )
+
+    coverage_assessment: str = Field(
+        min_length=10
+    )
+
+    recommended_test_focus: list[str] = Field(
+        min_length=1
+    )
+
+    qe_recommendation: str = Field(
+        min_length=10
+    )
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
 
 class FailureSeverity(str, Enum):
     LOW = "low"

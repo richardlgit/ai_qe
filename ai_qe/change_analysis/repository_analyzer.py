@@ -17,6 +17,15 @@ from ai_qe.change_analysis.repository_risk import (
     calculate_repository_risk,
 )
 
+from ai_qe.agents.models import (
+    RepositoryAIAnalysis,
+    RepositoryTestAnalysis,
+)
+from ai_qe.agents.models import (
+    RepositoryAIAnalysis,
+    RepositoryTestAnalysis,
+)
+
 @dataclass
 class RepositoryChangeAnalysis:
     base_revision: str
@@ -25,6 +34,129 @@ class RepositoryChangeAnalysis:
     affected_components: list[str]
     selected_tests: list[str]
     risk: RepositoryRisk
+    ai_analysis: RepositoryAIAnalysis | None = None
+    ai_status: str = "not_requested"
+    ai_error: str | None = None
+    test_analysis: RepositoryTestAnalysis | None = None
+    test_analysis_status: str = "not_requested"
+    test_analysis_error: str | None = None
+
+def enrich_repository(
+    result: RepositoryChangeAnalysis,
+    agent,
+    test_context: list[dict],
+) -> RepositoryChangeAnalysis:
+    try:
+        enrichment = agent.analyze(
+            analysis=result,
+            test_context=test_context,
+        )
+
+        result.test_analysis = (
+            enrichment.test_analysis
+        )
+
+        result.test_analysis_status = (
+            "success"
+        )
+
+        result.ai_analysis = (
+            enrichment.qe_analysis
+        )
+
+        result.ai_status = (
+            "success"
+        )
+
+    except Exception as exc:
+        error = str(exc)
+
+        result.test_analysis_status = (
+            "unavailable"
+        )
+
+        result.test_analysis_error = error
+
+        result.ai_status = (
+            "unavailable"
+        )
+
+        result.ai_error = error
+
+    return result
+
+def enrich_repository_test_analysis(
+    result: RepositoryChangeAnalysis,
+    agent,
+    test_context: list[dict],
+) -> RepositoryChangeAnalysis:
+    try:
+        result.test_analysis = (
+            agent.analyze(
+                analysis=result,
+                test_context=test_context,
+            )
+        )
+
+        result.test_analysis_status = (
+            "success"
+        )
+
+    except Exception as exc:
+        result.test_analysis_status = (
+            "unavailable"
+        )
+
+        result.test_analysis_error = (
+            str(exc)
+        )
+
+    return result
+
+def analyze_repository_change_with_ai(
+    repository_root: Path,
+    base_revision: str,
+    target_revision: str,
+    agent,
+    test_analysis=None,
+) -> RepositoryChangeAnalysis:
+    result = analyze_repository_change(
+        repository_root=repository_root,
+        base_revision=base_revision,
+        target_revision=target_revision,
+    )
+
+    try:
+        result.ai_analysis = agent.analyze(
+        analysis=result,
+        test_analysis=test_analysis,
+        )
+        result.ai_status = "success"
+
+    except Exception as exc:
+        result.ai_status = "unavailable"
+        result.ai_error = str(exc)
+
+    return result
+
+def enrich_repository_with_ai(
+    result: RepositoryChangeAnalysis,
+    agent,
+    test_analysis=None,
+) -> RepositoryChangeAnalysis:
+    try:
+        result.ai_analysis = agent.analyze(
+            analysis=result,
+            test_analysis=test_analysis,
+        )
+
+        result.ai_status = "success"
+
+    except Exception as exc:
+        result.ai_status = "unavailable"
+        result.ai_error = str(exc)
+
+    return result
 
 def _load_test_component_map(
     repository_root: Path,

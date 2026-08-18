@@ -132,6 +132,27 @@ def initialize_repository(
 
     return inventory
 
+def load_repository_inventory(
+    repository_root: Path,
+) -> dict:
+    path = (
+        repository_root
+        / ".ai-qe"
+        / "repository.json"
+    )
+
+    if not path.exists():
+        raise FileNotFoundError(
+            "AI-QE repository metadata not found. "
+            "Run initialization first."
+        )
+
+    return json.loads(
+        path.read_text(
+            encoding="utf-8"
+        )
+    )
+
 def load_discovered_components(
     repository_root: Path,
 ) -> list[DiscoveredComponent]:
