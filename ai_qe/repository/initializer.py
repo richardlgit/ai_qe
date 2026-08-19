@@ -19,6 +19,9 @@ from ai_qe.repository.component_discovery import (
 from ai_qe.repository.test_component_mapping import (
     map_tests_to_components,
 )
+from ai_qe.repository.fixture_discovery import (
+    discover_fixtures,
+)
 
 def initialize_repository(
     repository_root: Path,
@@ -40,6 +43,10 @@ def initialize_repository(
         repository_root
     )
 
+    fixtures = discover_fixtures(
+        repository_root
+    )   
+
     # 3. Discover components
     components = discover_components(
         repository_root=repository_root,
@@ -52,8 +59,9 @@ def initialize_repository(
             repository_root=repository_root,
             tests=tests,
             components=components,
+            fixtures=fixtures,
         )
-    )
+    )   
 
     languages = sorted(
         {
@@ -128,7 +136,7 @@ def initialize_repository(
         indent=2,
     ),
     encoding="utf-8",
-)
+    )
 
     return inventory
 

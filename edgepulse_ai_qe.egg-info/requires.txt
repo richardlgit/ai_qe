@@ -4,6 +4,7 @@ sqlalchemy
 pydantic
 httpx
 openai
+ollama
 
 [dev]
 pytest

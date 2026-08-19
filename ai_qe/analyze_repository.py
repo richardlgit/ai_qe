@@ -233,7 +233,7 @@ def main() -> None:
     if (
         result.test_analysis_status
         == "success"
-        ):
+    ):
         test_analysis = (
             result.test_analysis
         )
@@ -273,33 +273,46 @@ def main() -> None:
                     f"{test.reasoning}"
                 )
 
-    if test_analysis.coverage_gaps:
+        if test_analysis.coverage_gaps:
+            print()
+            print("Coverage gaps:")
+
+            for gap in (
+                test_analysis.coverage_gaps
+            ):
+                print(
+                    f"  - {gap}"
+                )
+
+        if test_analysis.recommended_tests:
+            print()
+            print("Recommended tests:")
+
+            for recommendation in (
+                test_analysis.recommended_tests
+            ):
+                print(
+                    f"  - {recommendation}"
+                )
+
         print()
-        print("Coverage gaps:")
-
-        for gap in (
-            test_analysis.coverage_gaps
-        ):
-            print(
-                f"  - {gap}"
-            )
-
-    if test_analysis.recommended_tests:
+        print(
+            f"Test analysis confidence: "
+            f"{test_analysis.confidence:.2f}"
+        )
+    elif (
+        args.ai
+        and result.test_analysis_status
+        == "unavailable"
+    ):
         print()
-        print("Recommended tests:")
+        print("Test intent analysis unavailable.")
 
-        for recommendation in (
-            test_analysis.recommended_tests
-        ):
+        if result.test_analysis_error:
             print(
-                f"  - {recommendation}"
-            )
-
-    print()
-    print(
-        f"Test analysis confidence: "
-        f"{test_analysis.confidence:.2f}"
-    )
+                f"Reason: "
+                f"{result.test_analysis_error}"
+            )    
 
 if __name__ == "__main__":
     main()

@@ -49,7 +49,8 @@ def test_nested_components_are_discovered(
     )
 
     (
-        services_dir / "order_service.py"
+
+    services_dir / "order_service.py"
     ).write_text(
         (
             "from sample_app.clients.payment_client "
@@ -59,7 +60,8 @@ def test_nested_components_are_discovered(
     )
 
     (
-        clients_dir / "payment_client.py"
+
+    clients_dir / "payment_client.py"
     ).write_text(
         "class PaymentClient: pass\n",
         encoding="utf-8",

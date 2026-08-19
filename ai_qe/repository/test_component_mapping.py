@@ -5,9 +5,124 @@ from pathlib import Path
 from ai_qe.repository.models import (
     DiscoveredComponent,
     DiscoveredTest,
+    DiscoveredFixture,
 )
 
 from collections import deque
+
+def _fixture_lookup(
+    fixtures: list[DiscoveredFixture],
+) -> dict[str, DiscoveredFixture]:
+    return {
+        fixture.name: fixture
+        for fixture in fixtures
+    }
+
+
+def _resolve_fixture_modules(
+    fixture_names: set[str],
+    fixtures: list[DiscoveredFixture],
+) -> set[str]:
+    lookup = _fixture_lookup(
+        fixtures
+    )
+
+    visited: set[str] = set()
+    modules: set[str] = set()
+    stack = list(fixture_names)
+
+    while stack:
+        fixture_name = stack.pop()
+
+        if fixture_name in visited:
+            continue
+
+        visited.add(fixture_name)
+
+        fixture = lookup.get(
+            fixture_name
+        )
+
+        if fixture is None:
+            continue
+
+        modules.update(
+            fixture.imported_modules
+        )
+
+        for dependency in (
+            fixture.dependencies
+        ):
+            if dependency not in visited:
+                stack.append(
+                    dependency
+                )
+
+    return modules
+
+def _test_parameters(
+    test_path: Path,
+    test_name: str,
+) -> set[str]:
+    try:
+        source = test_path.read_text(
+            encoding="utf-8"
+        )
+
+        tree = ast.parse(
+            source,
+            filename=str(test_path),
+        )
+
+    except (
+        UnicodeDecodeError,
+        SyntaxError,
+    ):
+        return set()
+
+    for node in tree.body:
+        if (
+            isinstance(
+                node,
+                ast.FunctionDef,
+            )
+            and node.name == test_name
+        ):
+            return {
+                argument.arg
+                for argument
+                in node.args.args
+            }
+
+    return set()
+
+def _find_conftest_files(
+    test_file: Path,
+    repository_root: Path,
+) -> list[Path]:
+    conftest_files: list[Path] = []
+
+    current = test_file.parent
+
+    while True:
+        candidate = (
+            current / "conftest.py"
+        )
+
+        if candidate.exists():
+            conftest_files.append(
+                candidate
+            )
+
+        if current == repository_root:
+            break
+
+        if repository_root not in current.parents:
+            break
+
+        current = current.parent
+
+    return conftest_files
 
 
 def _component_lookup(
@@ -168,15 +283,26 @@ def _direct_dependencies(
         in component.dependencies
     }
 
+
 def map_tests_to_components(
     repository_root: Path,
     tests: list[DiscoveredTest],
     components: list[DiscoveredComponent],
+    fixtures: list[DiscoveredFixture] | None = None,
 ) -> dict[str, list[str]]:
     mapping: dict[
         str,
         list[str],
     ] = defaultdict(list)
+
+    if fixtures is None:
+        fixtures = []
+
+    mapping: dict[
+        str,
+        list[str],
+    ] = defaultdict(list)
+
 
     for test in tests:
         test_path = (
@@ -184,9 +310,45 @@ def map_tests_to_components(
             / test.test_file
         )
 
-        imports = _imports_from_file(
+        imports = set(
+        _imports_from_file(
             test_path
         )
+        )
+
+        fixture_names = _test_parameters(
+            test_path=test_path,
+            test_name=test.name,
+        )
+
+        fixture_modules = (
+            _resolve_fixture_modules(
+                fixture_names=fixture_names,
+                fixtures=fixtures,
+            )
+        
+        )
+
+        # print()
+        # print("TEST:", test.name)
+        # print("fixture_names:", fixture_names)
+        # print("fixture_modules:", fixture_modules)
+        # print("imports:", imports)
+
+        imports.update(
+            fixture_modules
+        )
+
+        for conftest_file in _find_conftest_files(
+            test_file=test_path,
+            repository_root=repository_root,
+        ):
+
+            imports.update(
+                _imports_from_file(
+                    conftest_file
+                )
+            )
 
         matched_components: set[str] = set()
 
@@ -197,7 +359,12 @@ def map_tests_to_components(
                     components,
                 )
             )
-
+            # print(
+            #     "module:",
+            #     module_name,
+            #     "-> component:",
+            #     component_name,
+            # )
             if component_name is None:
                 continue
 
@@ -222,9 +389,7 @@ def map_tests_to_components(
             )
 
 
-        for component_name in (
-            matched_components
-        ):
+        for component_name in matched_components:
             mapping[
                 component_name
             ].append(

@@ -8,6 +8,17 @@ test_component_map: dict[
 )
 
 @dataclass
+class DiscoveredFixture:
+    name: str
+    source_file: str
+    dependencies: list[str] = field(
+        default_factory=list
+    )
+    imported_modules: list[str] = field(
+        default_factory=list
+    )
+    
+@dataclass
 class SourceFile:
     path: str
     language: str
