@@ -163,156 +163,287 @@ def main() -> None:
         print(f"  - {reason}")
 
     #AI Analysis
-    if result.ai_status == "success":
-        ai = result.ai_analysis
+    if (
+        args.ai
+        and result.ai_status == "success"
+        and result.coverage_analysis
+        is not None
+    ):
+        coverage = (
+        result.coverage_analysis
+    )
 
+    print()
+    print("=== CHANGE COVERAGE ===")
+    print()
+
+    print("SUMMARY")
+    print(
+        f"  {coverage.summary}"
+    )
+
+    print()
+    print(
+        f"COVERAGE STATUS: "
+        f"{coverage.coverage_status.upper()}"
+    )
+
+    if coverage.existing_test_changes:
         print()
-        print("AI QE Analysis:")
         print(
-            f"  Summary: "
-            f"{ai.change_summary}"
+            "EXISTING TESTS TO UPDATE"
         )
 
-        print()
-        print("  Behavioral changes:")
-        for item in ai.behavioral_changes:
-            print(f"    - {item}")
-
-        print()
-        print("  Failure modes:")
-        for failure in (
-            ai.likely_failure_modes
+        for index, item in enumerate(
+            coverage.existing_test_changes,
+            start=1,
         ):
+            print()
             print(
-                f"    - [{failure.severity.value}] "
-                f"{failure.description}"
+                f"{index}. "
+                f"{item.test_name}"
             )
             print(
-                f"      Reason: "
-                f"{failure.reasoning}"
+                f"   Gap: "
+                f"{item.gap}"
+            )
+            print(
+                f"   Change: "
+                f"{item.suggested_change}"
+            )
+
+    if coverage.new_tests_required:
+        print()
+        print("NEW TESTS REQUIRED")
+
+        for index, item in enumerate(
+            coverage.new_tests_required,
+            start=1,
+        ):
+            print()
+            print(
+                f"{index}. "
+                f"{item.behavior}"
+            )
+
+            print(
+                "   Verify:"
+            )
+
+            for assertion in (
+                item.assertions
+            ):
+                print(
+                    f"     - {assertion}"
+                )
+
+    if coverage.unaffected_tests:
+        print()
+        print("UNAFFECTED TESTS")
+
+        for test_name in (
+            coverage.unaffected_tests
+        ):
+            print(
+                f"  - {test_name}"
+            )
+
+    if coverage.remaining_risks:
+        print()
+        print("REMAINING RISKS")
+
+        for risk in (
+            coverage.remaining_risks
+        ):
+            print(
+                f"  - {risk}"
             )
 
         print()
-        print("  Coverage assessment:")
         print(
-            f"    {ai.coverage_assessment}"
-        )
-
-        print()
-        print("  Recommended test focus:")
-        for item in (
-            ai.recommended_test_focus
-        ):
-            print(f"    - {item}")
-
-        print()
-        print("  QE recommendation:")
-        print(
-            f"    {ai.qe_recommendation}"
-        )
-
-        print()
-        print(
-            f"  Confidence: "
-            f"{ai.confidence:.2f}"
+            f"AI confidence: "
+            f"{coverage.confidence:.2f}"
         )
 
     elif args.ai:
         print()
-        print("AI enrichment unavailable.")
-
-        if result.ai_error:
-            print(
-                f"Reason: {result.ai_error}"
-            )
-
         print(
-            "Continuing with deterministic analysis."
-        )
+        "AI change-coverage "
+        "analysis unavailable."
+    )
 
-    if (
-        result.test_analysis_status
-        == "success"
-    ):
-        test_analysis = (
-            result.test_analysis
-        )
-
-        print()
-        print("TEST INTENT ANALYSIS")
-        print()
-
+    if result.ai_error:
         print(
-            f"Coverage status: "
-            f"{test_analysis.coverage_status}"
+            f"Reason: "
+            f"{result.ai_error}"
         )
 
-        if test_analysis.related_tests:
-            print()
-            print("Related tests:")
 
-            for test in (
-                test_analysis.related_tests
-            ):
-                print(
-                    f"  - {test.test_name}"
-                )
+    #Old AI QE Analysis
+    # if result.ai_status == "success":
+    #     ai = result.ai_analysis
 
-                print(
-                    f"    Classification: "
-                    f"{test.classification.value}"
-                )
+    #     print()
+    #     print("AI QE Analysis:")
+    #     print(
+    #         f"  Summary: "
+    #         f"{ai.change_summary}"
+    #     )
 
-                print(
-                    f"    Intent: "
-                    f"{test.intent}"
-                )
+    #     print()
+    #     print("  Behavioral changes:")
+    #     for item in ai.behavioral_changes:
+    #         print(f"    - {item}")
 
-                print(
-                    f"    Reason: "
-                    f"{test.reasoning}"
-                )
+    #     print()
+    #     print("  Failure modes:")
+    #     for failure in (
+    #         ai.likely_failure_modes
+    #     ):
+    #         print(
+    #             f"    - [{failure.severity.value}] "
+    #             f"{failure.description}"
+    #         )
+    #         print(
+    #             f"      Reason: "
+    #             f"{failure.reasoning}"
+    #         )
 
-        if test_analysis.coverage_gaps:
-            print()
-            print("Coverage gaps:")
+    #     print()
+    #     print("  Coverage assessment:")
+    #     print(
+    #         f"    {ai.coverage_assessment}"
+    #     )
 
-            for gap in (
-                test_analysis.coverage_gaps
-            ):
-                print(
-                    f"  - {gap}"
-                )
+    #     print()
+    #     print("  Recommended test focus:")
+    #     for item in (
+    #         ai.recommended_test_focus
+    #     ):
+    #         print(f"    - {item}")
 
-        if test_analysis.recommended_tests:
-            print()
-            print("Recommended tests:")
+    #     print()
+    #     print("  QE recommendation:")
+    #     print(
+    #         f"    {ai.qe_recommendation}"
+    #     )
 
-            for recommendation in (
-                test_analysis.recommended_tests
-            ):
-                print(
-                    f"  - {recommendation}"
-                )
+    #     print()
+    #     print(
+    #         f"  Confidence: "
+    #         f"{ai.confidence:.2f}"
+    #     )
 
-        print()
-        print(
-            f"Test analysis confidence: "
-            f"{test_analysis.confidence:.2f}"
-        )
-    elif (
-        args.ai
-        and result.test_analysis_status
-        == "unavailable"
-    ):
-        print()
-        print("Test intent analysis unavailable.")
+    # elif args.ai:
+    #     print()
+    #     print("AI enrichment unavailable.")
 
-        if result.test_analysis_error:
-            print(
-                f"Reason: "
-                f"{result.test_analysis_error}"
-            )    
+    #     if result.ai_error:
+    #         print(
+    #             f"Reason: {result.ai_error}"
+    #         )
+
+    #     print(
+    #         "Continuing with deterministic analysis."
+    #     )
+
+    # if (
+    #     result.test_analysis_status
+    #     in("success","partial")
+    # ):
+    #     test_analysis = (
+    #         result.test_analysis
+    #     )
+
+    #     print()
+    #     print("TEST INTENT ANALYSIS")
+    #     print()
+
+    #     print(
+    #         f"Coverage status: "
+    #         f"{test_analysis.coverage_status}"
+    #     )
+
+    #     if test_analysis.related_tests:
+    #         print()
+    #         print("Related tests:")
+
+    #         for test in (
+    #             test_analysis.related_tests
+    #         ):
+    #             print(
+    #                 f"  - {test.test_name}"
+    #             )
+
+    #             print(
+    #                 f"    Classification: "
+    #                 f"{test.classification.value}"
+    #             )
+
+    #             print(
+    #                 f"    Intent: "
+    #                 f"{test.intent}"
+    #             )
+
+    #             print(
+    #                 f"    Reason: "
+    #                 f"{test.reasoning}"
+    #             )
+
+    #     if test_analysis.coverage_gaps:
+    #         print()
+    #         print("Coverage gaps:")
+
+    #         for gap in (
+    #             test_analysis.coverage_gaps
+    #         ):
+    #             print(
+    #                 f"  - {gap}"
+    #             )
+
+    #     if test_analysis.recommended_tests:
+    #         print()
+    #         print("Recommended tests:")
+
+    #         for recommendation in (
+    #             test_analysis.recommended_tests
+    #         ):
+    #             print(
+    #                 f"  - {recommendation}"
+    #             )
+
+    #     print()
+    #     print(
+    #         f"Test analysis confidence: "
+    #         f"{test_analysis.confidence:.2f}"
+    #     )
+    #     if (
+    #         result.test_analysis_status
+    #         == "partial"
+    #     ):
+    #         print()
+    #         print(
+    #             "Test intent analysis is incomplete."
+    #         )
+
+    #         if result.test_analysis_error:
+    #             print(
+    #                 f"Reason: "
+    #                 f"{result.test_analysis_error}"
+    #             )
+    # elif (
+    #     args.ai
+    #     and result.test_analysis_status
+    #     == "unavailable"
+    # ):
+    #     print()
+    #     print("Test intent analysis unavailable.")
+
+    #     if result.test_analysis_error:
+    #         print(
+    #             f"Reason: "
+    #             f"{result.test_analysis_error}"
+    #         )    
 
 if __name__ == "__main__":
     main()

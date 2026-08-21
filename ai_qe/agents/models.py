@@ -30,8 +30,9 @@ class TestIntentAnalysis(BaseModel):
     )
 
 class RepositoryAIEnrichment(BaseModel):
-    test_analysis: RepositoryTestAnalysis
-    qe_analysis: RepositoryAIAnalysis
+    # test_analysis: RepositoryTestAnalysis
+    # qe_analysis: RepositoryAIAnalysis
+    coverage_analysis: ChangeCoverageAnalysis
 
 class RepositoryTestAnalysis(BaseModel):
     coverage_status: str
@@ -190,3 +191,57 @@ class AITestGeneration(BaseModel):
             return numeric_value / 100.0
 
         return numeric_value
+
+class ExistingTestGap(BaseModel):
+    test_name: str
+
+    gap: str = Field(
+        min_length=5
+    )
+
+    suggested_change: str = Field(
+        min_length=5
+    )
+
+
+class NewTestRequirement(BaseModel):
+    behavior: str = Field(
+        min_length=5
+    )
+
+    assertions: list[str] = Field(
+        min_length=1
+    )
+
+
+class ChangeCoverageAnalysis(BaseModel):
+    summary: str = Field(
+        min_length=10
+    )
+
+    coverage_status: str
+
+    existing_test_changes: list[
+        ExistingTestGap
+    ] = Field(
+        default_factory=list
+    )
+
+    new_tests_required: list[
+        NewTestRequirement
+    ] = Field(
+        default_factory=list
+    )
+
+    unaffected_tests: list[str] = Field(
+        default_factory=list
+    )
+
+    remaining_risks: list[str] = Field(
+        default_factory=list
+    )
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )

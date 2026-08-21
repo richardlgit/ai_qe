@@ -20,10 +20,7 @@ from ai_qe.change_analysis.repository_risk import (
 from ai_qe.agents.models import (
     RepositoryAIAnalysis,
     RepositoryTestAnalysis,
-)
-from ai_qe.agents.models import (
-    RepositoryAIAnalysis,
-    RepositoryTestAnalysis,
+    ChangeCoverageAnalysis,
 )
 
 @dataclass
@@ -35,11 +32,17 @@ class RepositoryChangeAnalysis:
     selected_tests: list[str]
     risk: RepositoryRisk
     ai_analysis: RepositoryAIAnalysis | None = None
+    coverage_analysis: (
+    ChangeCoverageAnalysis | None
+    ) = None
     ai_status: str = "not_requested"
     ai_error: str | None = None
+    # ai_status: str = "not_requested"
+    # ai_error: str | None = None
     test_analysis: RepositoryTestAnalysis | None = None
     test_analysis_status: str = "not_requested"
     test_analysis_error: str | None = None
+
 
 def enrich_repository(
     result: RepositoryChangeAnalysis,
@@ -52,38 +55,18 @@ def enrich_repository(
             test_context=test_context,
         )
 
-        result.test_analysis = (
-            enrichment.test_analysis
+        result.coverage_analysis = (
+            enrichment.coverage_analysis
         )
 
-        result.test_analysis_status = (
-            "success"
-        )
-
-        result.ai_analysis = (
-            enrichment.qe_analysis
-        )
-
-        result.ai_status = (
-            "success"
-        )
+        result.ai_status = "success"
 
     except Exception as exc:
-        error = str(exc)
-
-        result.test_analysis_status = (
-            "unavailable"
-        )
-
-        result.test_analysis_error = error
-
-        result.ai_status = (
-            "unavailable"
-        )
-
-        result.ai_error = error
+        result.ai_status = "unavailable"
+        result.ai_error = str(exc)
 
     return result
+
 
 def enrich_repository_test_analysis(
     result: RepositoryChangeAnalysis,

@@ -1,97 +1,73 @@
 from ai_qe.agents.models import (
-    FailureMode,
-    FailureSeverity,
-    RepositoryAIAnalysis,
+    ChangeCoverageAnalysis,
+    ExistingTestGap,
+    NewTestRequirement,
     RepositoryAIEnrichment,
-    RepositoryTestAnalysis,
-    TestIntentAnalysis as IntentAnalysis,
-    TestRelevance as Relevance,
 )
 
 
 def test_repository_ai_enrichment_schema():
     enrichment = RepositoryAIEnrichment(
-        test_analysis=(
-            RepositoryTestAnalysis(
-                coverage_status="covered",
-                related_tests=[
-                    IntentAnalysis(
+        coverage_analysis=(
+            ChangeCoverageAnalysis(
+                summary=(
+                    "User creation now uses UUID "
+                    "identifiers and a typed response."
+                ),
+                coverage_status="partial",
+                existing_test_changes=[
+                    ExistingTestGap(
                         test_name=(
-                            "test_threshold"
+                            "test_create_get_user"
                         ),
-                        classification=(
-                            Relevance.REGRESSION_DETECTOR
+                        gap=(
+                            "The test still relies on "
+                            "the removed fixture id."
                         ),
-                        intent=(
-                            "Verify alert creation "
-                            "at the threshold."
-                        ),
-                        reasoning=(
-                            "The existing expectation "
-                            "conflicts with the changed "
-                            "boundary behavior."
+                        suggested_change=(
+                            "Use the UUID returned by "
+                            "the create response."
                         ),
                     )
                 ],
-                coverage_gaps=[],
-                recommended_tests=[],
+                new_tests_required=[
+                    NewTestRequirement(
+                        behavior=(
+                            "Duplicate user creation"
+                        ),
+                        assertions=[
+                            "Returns HTTP 409.",
+                            (
+                                "The transaction is "
+                                "rolled back."
+                            ),
+                        ],
+                    )
+                ],
+                unaffected_tests=[
+                    "test_root",
+                ],
+                remaining_risks=[],
                 confidence=0.95,
             )
-        ),
-        qe_analysis=(
-            RepositoryAIAnalysis(
-                change_summary=(
-                    "Threshold behavior changed."
-                ),
-                behavioral_changes=[
-                    (
-                        "Equality now enters "
-                        "the no-alert path."
-                    )
-                ],
-                likely_failure_modes=[
-                    FailureMode(
-                        description=(
-                            "Critical alert may "
-                            "be missed."
-                        ),
-                        severity=(
-                            FailureSeverity.HIGH
-                        ),
-                        reasoning=(
-                            "The equality case "
-                            "is now suppressed."
-                        ),
-                    )
-                ],
-                coverage_assessment=(
-                    "Existing threshold coverage "
-                    "is relevant."
-                ),
-                recommended_test_focus=[
-                    (
-                        "Verify expected behavior "
-                        "at the threshold."
-                    )
-                ],
-                qe_recommendation=(
-                    "Review the implementation "
-                    "against the existing test "
-                    "expectation."
-                ),
-                confidence=0.95,
-            )
-        ),
+        )
     )
 
     assert (
-        enrichment.test_analysis
-        .related_tests[0]
-        .classification
-        == Relevance.REGRESSION_DETECTOR
+        enrichment.coverage_analysis
+        .coverage_status
+        == "partial"
     )
 
     assert (
-        enrichment.qe_analysis.confidence
+        enrichment.coverage_analysis
+        .existing_test_changes[0]
+        .test_name
+        == "test_create_get_user"
+    )
+
+    assert (
+        enrichment.coverage_analysis
+        .confidence
         == 0.95
     )

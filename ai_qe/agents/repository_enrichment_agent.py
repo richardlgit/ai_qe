@@ -7,50 +7,53 @@ from ai_qe.change_analysis.repository_analyzer import (
     RepositoryChangeAnalysis,
 )
 from ai_qe.llm.base import LLMProvider
-
+from ai_qe.agents.models import (
+    RepositoryAIEnrichment,
+)
 
 SYSTEM_PROMPT = """
 You are a senior Quality Engineering analyst.
 
-Analyze a software change together with the actual source of
-discovered related tests.
+Your only objective is to identify test coverage gaps introduced
+or exposed by the supplied code change.
 
-You must perform two connected tasks:
+Use the Git diff and the actual existing test sources as evidence.
 
-1. Analyze the intent and relevance of the existing tests.
-2. Use that test evidence when producing the final QE analysis.
+Produce a concise change-coverage plan.
 
-Important principles:
+For existing tests affected by the change:
+- identify what coverage is missing,
+- state exactly what should be changed or strengthened.
+
+For changed behavior with no existing coverage:
+- recommend a new behavioral test,
+- list the assertions that test must verify.
+
+Important rules:
 
 - Existing tests are evidence of prior expected behavior.
 - Do not assume the changed implementation is automatically correct.
-- If changed code conflicts with an existing test expectation,
-  identify the conflict as a potential regression unless there is
-  explicit evidence that the expected behavior intentionally changed.
-- Do not recommend modifying a valid regression test simply to make
-  it agree with the changed implementation.
-- Do not invent business requirements.
-- Do not classify a test as redundant merely because it does not
-  exercise the exact changed condition.
-- Redundant means materially equivalent behavior and assertions are
-  already covered elsewhere.
-- Tests covering neighboring boundary behavior may remain relevant
-  even if they do not detect the exact changed case.
-- If no related tests exist, treat the changed behavior as a
-  coverage gap.
-- Recommend test scenarios as behaviors to verify, not invented test names.
-- Keep the final QE recommendation consistent with the test-intent analysis.
-- The deterministic risk score and release decision are authoritative.
-  Do not override or repeat them as your own decision.
-For every test supplied in selected_tests, include exactly one entry
-in test_analysis.related_tests.
+- Do not invent test names.
+- Do not recommend changing unrelated tests.
+- Do not classify tests merely because they belong to the same component.
+- Do not repeat unchanged behavior.
+- Do not repeat deterministic risk information.
+- Do not write a general QE report.
+- Keep explanations concise and actionable.
+- Recommend behavioral coverage, not implementation-specific test names.
+- Every test_name in existing_test_changes MUST exactly match
+one of the supplied selected_tests. Never create or rename an
+existing test.
+- Each entry in new_tests_required should represent one distinct behavior
+or failure path.
 
-Do not omit a supplied test even if it is unaffected by the change.
-Classify unaffected tests as "unaffected".
+- Do not combine multiple independent behaviors into one test requirement.
 
-test_analysis.related_tests may be empty only when selected_tests is empty.
-The number of entries in test_analysis.related_tests must equal the
-number of tests supplied in selected_tests.
+Examples of distinct behaviors include:
+- explicit valid UUID handling
+- malformed UUID validation
+- duplicate creation conflict handling
+- unexpected database failure handling
 """
 
 
@@ -86,7 +89,7 @@ class RepositoryEnrichmentAgent:
 
         
         user_prompt = f"""
-            Analyze this repository change.
+            Analyze the test coverage impact of this repository change.
 
             Repository evidence:
 
@@ -96,56 +99,102 @@ class RepositoryEnrichmentAgent:
 
             {combined_diff}
 
-            Return BOTH:
+            Return a concise change-coverage analysis with:
 
-            A. Test intent analysis
-            - infer each related test's behavioral intent from its source,
-            - classify its relevance,
-            - identify regression detectors,
-            - identify unaffected or incomplete coverage,
-            - identify redundancy only with strong evidence,
-            - identify coverage gaps.
+            1. summary
+            - no more than 3 sentences
 
-            B. Final QE analysis
-            - explain the behavioral change,
-            - identify likely failure modes,
-            - assess test sufficiency,
-            - recommend focused test behavior,
-            - reconcile the final recommendation with the test-intent evidence.
+            2. coverage_status
+            - use one of:
+                "complete"
+                "partial"
+                "gap"
+                "blocked"
 
-            If the changed implementation conflicts with an existing test
-            expectation, explicitly call out that conflict.
+            3. existing_test_changes
+            - include only existing tests that should be changed or strengthened
+            - for each test provide:
+                - the specific coverage gap
+                - the concrete change needed
 
-            Confidence values must be between 0.0 and 1.0.
+            4. new_tests_required
+            - include only changed behaviors not adequately covered by existing tests
+            - describe the behavior to verify
+            - list concrete assertions
+
+            5. unaffected_tests
+            - existing selected tests that require no change
+
+            6. remaining_risks
+            - only risks that cannot be closed by the recommended tests
+
+            Do not provide long narrative sections.
+            Do not invent test names.
             """
 
         enrichment = self.provider.generate_structured(
-                system_prompt=SYSTEM_PROMPT,
-                user_prompt=user_prompt,
-                response_model=RepositoryAIEnrichment,
-            )
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=user_prompt,
+        response_model=RepositoryAIEnrichment,
+        )
 
-        expected_tests = {
+        coverage = enrichment.coverage_analysis
+
+        known_tests = {
             test["name"]
             for test in test_context
         }
 
-        analyzed_tests = {
-            test.test_name
-            for test
-            in enrichment.test_analysis.related_tests
-        }
+        # Keep only real repository tests in
+        # existing_test_changes.
+        valid_existing_changes = []
+        unknown_tests = []
 
-        missing_tests = (
-            expected_tests - analyzed_tests
+        for item in coverage.existing_test_changes:
+            if item.test_name in known_tests:
+                valid_existing_changes.append(
+                    item
+                )
+            else:
+                unknown_tests.append(
+                    item.test_name
+                )
+
+        coverage.existing_test_changes = (
+            valid_existing_changes
         )
 
-        if missing_tests:
-            raise ValueError(
-                "AI test analysis omitted discovered tests: "
+        # A test cannot simultaneously require a
+        # change and be classified as unaffected.
+        changed_test_names = {
+            item.test_name
+            for item
+            in coverage.existing_test_changes
+        }
+
+        coverage.unaffected_tests = [
+            test_name
+            for test_name
+            in coverage.unaffected_tests
+            if (
+                test_name in known_tests
+                and test_name
+                not in changed_test_names
+            )
+        ]
+
+        # Warn rather than fail the whole
+        # enrichment response.
+        if unknown_tests:
+            print(
+                "AI warning: ignored unknown "
+                "existing tests: "
                 + ", ".join(
-                    sorted(missing_tests)
+                    sorted(
+                        set(unknown_tests)
+                    )
                 )
             )
+
 
         return enrichment
