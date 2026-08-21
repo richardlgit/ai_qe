@@ -168,102 +168,102 @@ def main() -> None:
         and result.ai_status == "success"
         and result.coverage_analysis
         is not None
-    ):
+        ):
         coverage = (
         result.coverage_analysis
-    )
-
-    print()
-    print("=== CHANGE COVERAGE ===")
-    print()
-
-    print("SUMMARY")
-    print(
-        f"  {coverage.summary}"
-    )
-
-    print()
-    print(
-        f"COVERAGE STATUS: "
-        f"{coverage.coverage_status.upper()}"
-    )
-
-    if coverage.existing_test_changes:
-        print()
-        print(
-            "EXISTING TESTS TO UPDATE"
         )
 
-        for index, item in enumerate(
-            coverage.existing_test_changes,
-            start=1,
-        ):
-            print()
-            print(
-                f"{index}. "
-                f"{item.test_name}"
-            )
-            print(
-                f"   Gap: "
-                f"{item.gap}"
-            )
-            print(
-                f"   Change: "
-                f"{item.suggested_change}"
-            )
-
-    if coverage.new_tests_required:
         print()
-        print("NEW TESTS REQUIRED")
+        print("=== CHANGE COVERAGE ===")
+        print()
 
-        for index, item in enumerate(
-            coverage.new_tests_required,
-            start=1,
-        ):
+        print("SUMMARY")
+        print(
+            f"  {coverage.summary}"
+        )
+
+        print()
+        print(
+            f"COVERAGE STATUS: "
+            f"{coverage.coverage_status.upper()}"
+        )
+
+        if coverage.existing_test_changes:
             print()
             print(
-                f"{index}. "
-                f"{item.behavior}"
+                "EXISTING TESTS TO UPDATE"
             )
 
-            print(
-                "   Verify:"
-            )
-
-            for assertion in (
-                item.assertions
+            for index, item in enumerate(
+                coverage.existing_test_changes,
+                start=1,
             ):
+                print()
                 print(
-                    f"     - {assertion}"
+                    f"{index}. "
+                    f"{item.test_name}"
+                )
+                print(
+                    f"   Gap: "
+                    f"{item.gap}"
+                )
+                print(
+                    f"   Change: "
+                    f"{item.suggested_change}"
                 )
 
-    if coverage.unaffected_tests:
-        print()
-        print("UNAFFECTED TESTS")
+        if coverage.new_tests_required:
+            print()
+            print("NEW TESTS REQUIRED")
 
-        for test_name in (
-            coverage.unaffected_tests
-        ):
+            for index, item in enumerate(
+                coverage.new_tests_required,
+                start=1,
+            ):
+                print()
+                print(
+                    f"{index}. "
+                    f"{item.behavior}"
+                )
+
+                print(
+                    "   Verify:"
+                )
+
+                for assertion in (
+                    item.assertions
+                ):
+                    print(
+                        f"     - {assertion}"
+                    )
+
+        if coverage.unaffected_tests:
+            print()
+            print("UNAFFECTED TESTS")
+
+            for test_name in (
+                coverage.unaffected_tests
+            ):
+                print(
+                    f"  - {test_name}"
+                )
+
+        if coverage.remaining_risks:
+            print()
+            print("REMAINING RISKS")
+
+            for risk in (
+                coverage.remaining_risks
+            ):
+                print(
+                    f"  - {risk}"
+                )
+
+            print()
             print(
-                f"  - {test_name}"
+                f"AI confidence: "
+                f"{coverage.confidence:.2f}"
             )
-
-    if coverage.remaining_risks:
-        print()
-        print("REMAINING RISKS")
-
-        for risk in (
-            coverage.remaining_risks
-        ):
-            print(
-                f"  - {risk}"
-            )
-
-        print()
-        print(
-            f"AI confidence: "
-            f"{coverage.confidence:.2f}"
-        )
 
     elif args.ai:
         print()

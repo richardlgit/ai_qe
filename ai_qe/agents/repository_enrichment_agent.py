@@ -54,6 +54,16 @@ Examples of distinct behaviors include:
 - malformed UUID validation
 - duplicate creation conflict handling
 - unexpected database failure handling
+
+- Do not mention, infer, or refer to any existing test that is not present
+in the supplied selected_tests.
+
+This restriction applies everywhere in the response, including summary,
+coverage gaps, remaining risks, and recommendations.
+
+If a useful test does not currently exist in selected_tests, describe
+the missing behavior under new_tests_required rather than claiming that
+an existing test exists.
 """
 
 
